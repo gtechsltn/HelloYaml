@@ -41,14 +41,95 @@
     </nav>
 
     <div class="container">
-        <div class="jumbotron">
-            <h1>Bootstrap</h1>
-            <p>This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
-            <p><a class="btn btn-primary btn-lg">Learn more</a></p>
+        <div class="row">
+            <div class="col-md-12">
+                <input type="file" id="fileUpload" value="" />
+                &nbsp;&nbsp;
+                <button id="btnUpload" onclick="UploadFile()">
+                    Upload
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <button id="btnList" onclick="ListFiles()">
+                    List Files
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12" id="filesdiv">
+                <table id="tblfiles" border='1'>
+                    <tr>
+                        <th>FileName</th>
+                        <th>Size</th>
+                        <th>#</th>
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script>
+        function UploadFile() {
+            // grab your file object from a file input
+            fileData = document.getElementById("fileUpload").files[0];
+
+            $.ajax({
+                url: 'http://localhost:50381/Service1.svc/file?fileName=' + fileData.name,
+                type: 'POST',
+                data: fileData,
+                cache: false,
+                // dataType: 'json',
+                processData: false, // Don't process the files
+                contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+                success: function (result) {
+                    alert('successful..');
+                },
+                error: function (result) {
+                    debugger;
+                    if (result.statusText === 'OK')
+                        alert('successful..');
+                    else
+                        alert('Failed with reason: ' + result.statusText);
+                }
+            });
+
+        }
+
+        function DownloadFile(fileName, fileType) {
+
+            var url = 'http://localhost:50381/Service1.svc/file?fileName=' + fileName;
+            window.location(url);
+        }
+
+        function ListFiles() {
+            $('#tblfiles').append('');
+            $.ajax({
+                url: 'http://localhost:50381/Service1.svc/files', //wcf rest service which return files details.
+                type: 'GET',
+                cache: false,
+                dataType: 'xml',
+                processData: false, // Don't process the files
+                contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+                success: function (result) {
+                    var trHTML = '';
+                    var i;
+                    var x = result.getElementsByTagName("FileDetails");
+                    for (i = 0; i < x.length; i++) {
+                        var filename = x[i].childNodes[0].textContent;
+                        var filesize = x[i].childNodes[2].textContent;
+                        var fileType = x[i].childNodes[1].textContent;
+                        trHTML += '<tr><td>' + filename + '</td><td>' + filesize + '</td><td>' + '<a href="#" onclick="return DownloadFile(\'' + filename + '\',\'' + fileType + '\');">Download</a>' + '</td></tr>';
+                    }
+                    $('#tblfiles').append(trHTML);
+                },
+                error: function (result) {
+                    alert('Failed with reason: ' + result.statusText);
+                }
+            });
+        }
+    </script>
 </body>
 </html>
